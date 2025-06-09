@@ -1,0 +1,19 @@
+{
+    "name": "divulgueregional/api-c6-bank",
+    "description": "Geração de boletos através da api c6 bank",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Divulgueregional\\ApiC6Bank\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Roseno Matos",
+            "email": "rosenomatos@gmail.com.br"
+        }
+    ],
+    "require": {
+        "guzzlehttp/guzzle": "^7.0"
+    }
+}
