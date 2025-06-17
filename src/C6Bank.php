@@ -40,15 +40,20 @@ class C6Bank
                 $sandbox = $this->config->sandbox;
             }
         }
-        $url = 'https://baas-api.c6bank.info/v1/auth'; // URL padrão para produção
+        $url = 'https://baas-api.c6bank.info'; // URL padrão para produção
 
         if ($sandbox == 0) {
-            $url = 'https://baas-api-sandbox.c6bank.info/v1/auth'; // URL para ambiente de homologação (sandbox)
+            $url = 'https://baas-api-sandbox.c6bank.info'; // URL para ambiente de homologação (sandbox)
         }
 
         $this->client = new Client([
             'base_uri' => $url,
         ]);
+
+        $this->token = '';
+        if ($config->token != '') {
+            $this->token = $config->token;
+        }
     }
 
     #################################################
@@ -59,7 +64,7 @@ class C6Bank
         try {
             $response = $this->client->request(
                 'POST',
-                'v1/auth',
+                '/v1/auth',
                 [
                     'headers' => [
                         'Content-Type' => 'application/x-www-form-urlencoded',
@@ -77,15 +82,220 @@ class C6Bank
                 ]
             );
 
-            return (array) json_decode($response->getBody()->getContents());
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+            // return (array) json_decode($response->getBody()->getContents());
         } catch (ClientException $e) {
-            // return $this->parseResultClient($e);
-            return $e;
+            $response = $e->getResponse();
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
         } catch (\Exception $e) {
             $response = $e->getMessage();
             return ['error' => $response];
         }
     }
+
+    public function setToken($token)
+    {
+        $this->token = $token;
+    }
+
+    private function ckeckToken()
+    {
+        if ($this->token != '') {
+            return $this->token;
+        }
+
+        $response = $this->gerarToken();
+        return $response['access_token'];
+    }
+    #################################################
+    ###### FIM - TOKEN ##############################
+    #################################################
+
+    #################################################
+    ###### BOLETO ###################################
+    #################################################
+    public function gerarNovoBoleto($dadosBoleto)
+    {
+        $token = $this->ckeckToken();
+        try {
+            $response = $this->client->request(
+                'POST',
+                'v1/bank_slips',
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => "Bearer {$token}",
+                        'partner-software-name' => $this->config->softwareName ? $this->config->softwareName : null,
+                        'partner-software-version' => $this->config->softwareVersion ? $this->config->softwareVersion : null
+                    ],
+                    'cert' => $this->config->certificate,
+                    'verify' => false,
+                    'ssl_key' => $this->config->certificateKey,
+                    'body' => json_encode($dadosBoleto),
+                ]
+            );
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (ClientException $e) {
+            $response = $e->getResponse();
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (\Exception $e) {
+            $response = $e->getMessage();
+            return ['error' => $response];
+        }
+    }
+
+    public function consultarboleto($id)
+    {
+        $token = $this->ckeckToken();
+        try {
+            $response = $this->client->request(
+                'GET',
+                "v1/bank_slips/{$id}",
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => "Bearer {$token}",
+                        'partner-software-name' => $this->config->softwareName ? $this->config->softwareName : null,
+                        'partner-software-version' => $this->config->softwareVersion ? $this->config->softwareVersion : null
+                    ],
+                    'cert' => $this->config->certificate,
+                    'verify' => false,
+                    'ssl_key' => $this->config->certificateKey,
+                ]
+            );
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (ClientException $e) {
+            $response = $e->getResponse();
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (\Exception $e) {
+            $response = $e->getMessage();
+            return ['error' => $response];
+        }
+    }
+
+    public function obterBoleto($id)
+    {
+        $token = $this->ckeckToken();
+        try {
+            $response = $this->client->request(
+                'GET',
+                "v1/bank_slips/{$id}/pdf",
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => "Bearer {$token}",
+                        'partner-software-name' => $this->config->softwareName ? $this->config->softwareName : null,
+                        'partner-software-version' => $this->config->softwareVersion ? $this->config->softwareVersion : null
+                    ],
+                    'cert' => $this->config->certificate,
+                    'verify' => false,
+                    'ssl_key' => $this->config->certificateKey,
+                ]
+            );
+            return $response->getBody()->getContents();
+        } catch (ClientException $e) {
+            $response = $e->getResponse();
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (\Exception $e) {
+            $response = $e->getMessage();
+            return ['error' => $response];
+        }
+    }
+
+    public function cancelarBoleto($id)
+    {
+        $token = $this->ckeckToken();
+        try {
+            $response = $this->client->request(
+                'PUT',
+                "v1/bank_slips/{$id}/cancel",
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => "Bearer {$token}",
+                        'partner-software-name' => $this->config->softwareName ? $this->config->softwareName : null,
+                        'partner-software-version' => $this->config->softwareVersion ? $this->config->softwareVersion : null
+                    ],
+                    'cert' => $this->config->certificate,
+                    'verify' => false,
+                    'ssl_key' => $this->config->certificateKey,
+                ]
+            );
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (ClientException $e) {
+            $response = $e->getResponse();
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (\Exception $e) {
+            $response = $e->getMessage();
+            return ['error' => $response];
+        }
+    }
+
+    public function alterarBoleto($id, $dadosBoleto)
+    {
+        $token = $this->ckeckToken();
+        try {
+            $response = $this->client->request(
+                'PUT',
+                "v1/bank_slips/{$id}",
+                [
+                    'headers' => [
+                        'Content-Type' => 'application/json',
+                        'Authorization' => "Bearer {$token}",
+                        'partner-software-name' => $this->config->softwareName ? $this->config->softwareName : null,
+                        'partner-software-version' => $this->config->softwareVersion ? $this->config->softwareVersion : null
+                    ],
+                    'cert' => $this->config->certificate,
+                    'verify' => false,
+                    'ssl_key' => $this->config->certificateKey,
+                    'body' => json_encode($dadosBoleto),
+                ]
+            );
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (ClientException $e) {
+            $response = $e->getResponse();
+            return [
+                'status' => $response->getStatusCode(),
+                'body' => json_decode($response->getBody()->getContents(), true)
+            ];
+        } catch (\Exception $e) {
+            $response = $e->getMessage();
+            return ['error' => $response];
+        }
+    }
+    #################################################
+    ###### FIM - BOLETO #############################
+    #################################################
 
     #################################################
     ###### TESTE ####################################
