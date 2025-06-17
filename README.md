@@ -24,7 +24,7 @@ composer update
 <b>Ou pela última tag: </b>
 
 ```php
-composer update divulgueregional/api-c6-bank 1.0.0
+composer update divulgueregional/api-c6-bank 1.0.1
 ```
 
 ## O QUE VOCÊ PODE UTILIZAR
@@ -32,6 +32,14 @@ composer update divulgueregional/api-c6-bank 1.0.0
 <b>SEGURANÇA</b><br>
 
 - Gerar o token
+
+<b>BOLETO</b><br>
+
+- Gerar Boleto
+- Consultar Boleto
+- Alterar Boleto
+- Cancelar Boleto
+- Obter Boleto
 
 ## Documentação
 
